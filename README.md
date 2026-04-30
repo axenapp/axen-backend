@@ -1,98 +1,138 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Axen Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST del sistema Axen — Plataforma integral de reservas de servicios locales.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Stack
 
-## Description
+- **Framework:** NestJS + TypeScript
+- **Base de datos:** PostgreSQL 15 + TypeORM
+- **Autenticación:** JWT + Passport.js
+- **Pagos:** MercadoPago (sandbox)
+- **Emails:** Resend
+- **Geolocalización:** Google Maps Geocoding API
+- **Contenedor BD:** Docker
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## Requisitos
+
+- Node.js v18 o superior
+- npm v9 o superior
+- Docker Desktop
+- Git
+
+---
+
+## Instalación
 
 ```bash
-$ npm install
+# 1. Clonar el repositorio
+git clone https://github.com/axenapp/axen-backend.git
+cd axen-backend
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Crear el archivo de variables de entorno
+cp .env.example .env
+# Completar los valores en .env
+
+# 4. Levantar PostgreSQL con Docker
+docker-compose up -d
+
+# 5. Levantar el servidor en modo desarrollo
+npm run start:dev
 ```
 
-## Compile and run the project
+El servidor corre en `http://localhost:3000/api/v1`
 
-```bash
-# development
-$ npm run start
+---
 
-# watch mode
-$ npm run start:dev
+## Variables de entorno
 
-# production mode
-$ npm run start:prod
-```
+Ver `.env.example` para la lista completa de variables requeridas.
 
-## Run tests
+---
 
-```bash
-# unit tests
-$ npm run test
+## Estructura del proyecto
+src/
+├── modules/
+│   ├── auth/           # Autenticación y registro
+│   ├── users/          # Entidad y gestión de usuarios
+│   ├── partners/       # Negocios y onboarding
+│   ├── services/       # Catálogo de servicios
+│   ├── slots/          # Disponibilidad horaria
+│   ├── bookings/       # Reservas de turnos
+│   ├── payments/       # Pagos con MercadoPago
+│   ├── notifications/  # Emails y recordatorios
+│   └── reviews/        # Calificaciones
+├── common/
+│   ├── guards/         # JwtAuthGuard, RolesGuard
+│   ├── decorators/     # @Roles, @CurrentUser
+│   ├── filters/        # ExceptionFilter global
+│   └── pipes/          # Pipes de validación
+├── config/             # Configuración centralizada
+├── app.module.ts
+└── main.ts
 
-# e2e tests
-$ npm run test:e2e
+---
 
-# test coverage
-$ npm run test:cov
-```
+## Endpoints disponibles
 
-## Deployment
+### Autenticación
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+| Método | Endpoint | Descripción | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/v1/auth/register` | Registro de usuario | No |
+| POST | `/api/v1/auth/login` | Login y obtención de JWT | No |
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+## Progreso del desarrollo
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### ✅ Fase 1 — Configuración inicial
+- Proyecto NestJS inicializado con TypeScript
+- PostgreSQL 15 en contenedor Docker
+- TypeORM conectado con sincronización automática en desarrollo
+- ValidationPipe global (whitelist, transform, forbidNonWhitelisted)
+- CORS configurado para el panel web
+- Prefijo global `/api/v1`
+- Estructura de módulos creada
 
-## Resources
+### ✅ Fase 2 — Autenticación
+- Entidad `User` con UUID, roles enum (user/partner/admin), soft delete y bloqueo por intentos fallidos
+- `POST /api/v1/auth/register` — registro con hash bcrypt (factor 12) y validación de email único
+- `POST /api/v1/auth/login` — login con verificación de contraseña y bloqueo tras 5 intentos fallidos (15 min)
+- Generación de JWT con payload `{ sub, email, role }`
+- `passwordHash` nunca expuesto en las respuestas
 
-Check out a few resources that may come in handy when working with NestJS:
+### ⏳ En progreso
+- JwtAuthGuard y RolesGuard
+- ExceptionFilter global
+- Módulo Partners (onboarding)
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 📋 Pendiente
+- Módulo Services (catálogo)
+- Módulo Slots (disponibilidad)
+- Módulo Bookings (reservas con SELECT FOR UPDATE)
+- Módulo Payments (MercadoPago webhook)
+- Módulo Notifications (Resend + cron)
+- Módulo Reviews (calificaciones)
+- Deploy en Render
 
-## Support
+---
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Documentación técnica
 
-## Stay in touch
+La arquitectura completa del sistema está documentada en el repositorio de la organización:
+[axenapp/docs](https://github.com/axenapp)
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Incluye diagramas UML, esquema de base de datos, flujos de interacción, decisiones arquitectónicas y requisitos funcionales y no funcionales.
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Equipo
+
+- **Franco Chiquilito** — Backend + App móvil
+- **Flor Gomez Pacheco** — Panel web
+
