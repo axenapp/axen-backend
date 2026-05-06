@@ -52,7 +52,15 @@ export class PartnersController {
   ) {
     return this.partnersService.update(id, updatePartnerDto);
   }
-
+    // Actualizar ubicación del negocio con geocodificación
+    @Patch(':id/location')
+    @Roles(UserRole.PARTNER)
+    async updateLocation(
+    @Param('id') id: string,
+    @Body('address') address: string,
+    ) {
+    return this.partnersService.updateLocation(id, address);
+    }
   // Activar el negocio (completar onboarding)
   @Patch(':id/activate')
   @Roles(UserRole.PARTNER)

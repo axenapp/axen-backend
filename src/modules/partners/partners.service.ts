@@ -9,6 +9,7 @@ import { Partner, PartnerStatus } from './partner.entity';
 import { User, UserRole } from '../users/user.entity';
 import { CreatePartnerDto } from './dto/create-partner.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
+import { GeocodingService } from './geocoding.service';
 
 @Injectable()
 export class PartnersService {
@@ -17,10 +18,10 @@ export class PartnersService {
     private readonly partnerRepository: Repository<Partner>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly geocodingService: GeocodingService,
   ) {}
 
   async create(userId: string, createPartnerDto: CreatePartnerDto) {
-    // Verificar que no tenga ya un negocio registrado
     const existing = await this.partnerRepository.findOne({
       where: { userId },
     });
@@ -29,10 +30,8 @@ export class PartnersService {
       throw new ConflictException('Este usuario ya tiene un negocio registrado');
     }
 
-    // Cambiar el rol del usuario a partner
     await this.userRepository.update(userId, { role: UserRole.PARTNER });
 
-    // Crear el partner en estado draft
     const partner = this.partnerRepository.create({
       userId,
       ...createPartnerDto,
@@ -70,6 +69,20 @@ export class PartnersService {
   async update(id: string, updatePartnerDto: UpdatePartnerDto) {
     const partner = await this.findOne(id);
     Object.assign(partner, updatePartnerDto);
+    return this.partnerRepository.save(partner);
+  }
+
+  async updateLocation(id: string, address: string) {
+    const partner = await this.findOne(id);
+
+    // Geocodificar la dirección con Google Maps
+    const { lat, lng, formattedAddress } =
+      await this.geocodingService.geocode(address);
+
+    partner.address = formattedAddress;
+    partner.lat = lat;
+    partner.lng = lng;
+
     return this.partnerRepository.save(partner);
   }
 
