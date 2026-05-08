@@ -37,6 +37,13 @@ export class PartnersController {
     return this.partnersService.findByUserId(user.id);
   }
 
+  // Dashboard del partner
+  @Get('dashboard')
+  @Roles(UserRole.PARTNER)
+  async getDashboard(@CurrentUser() user: User) {
+    return this.partnersService.getDashboard(user.id);
+  }
+
   // Ver un negocio por ID (público para usuarios autenticados)
   @Get(':id')
   async findOne(@Param('id') id: string) {
