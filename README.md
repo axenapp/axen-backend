@@ -90,35 +90,85 @@ src/
 
 ## Progreso del desarrollo
 
-### ✅ Fase 1 — Configuración inicial
-- Proyecto NestJS inicializado con TypeScript
-- PostgreSQL 15 en contenedor Docker
-- TypeORM conectado con sincronización automática en desarrollo
-- ValidationPipe global (whitelist, transform, forbidNonWhitelisted)
-- CORS configurado para el panel web
-- Prefijo global `/api/v1`
-- Estructura de módulos creada
+✅ Fase 1 — Configuración inicial
 
-### ✅ Fase 2 — Autenticación
-- Entidad `User` con UUID, roles enum (user/partner/admin), soft delete y bloqueo por intentos fallidos
-- `POST /api/v1/auth/register` — registro con hash bcrypt (factor 12) y validación de email único
-- `POST /api/v1/auth/login` — login con verificación de contraseña y bloqueo tras 5 intentos fallidos (15 min)
-- Generación de JWT con payload `{ sub, email, role }`
-- `passwordHash` nunca expuesto en las respuestas
+Proyecto NestJS inicializado con TypeScript
+PostgreSQL 15 en contenedor Docker (docker-compose up -d)
+TypeORM conectado con sincronización automática en desarrollo
+ValidationPipe global (whitelist, transform, forbidNonWhitelisted)
+ExceptionFilter global con formato estándar de errores y traceId UUID
+CORS configurado para el panel web
+Prefijo global /api/v1
+Estructura de módulos creada
 
-### ⏳ En progreso
-- JwtAuthGuard y RolesGuard
-- ExceptionFilter global
-- Módulo Partners (onboarding)
+✅ Fase 2 — Autenticación
 
-### 📋 Pendiente
-- Módulo Services (catálogo)
-- Módulo Slots (disponibilidad)
-- Módulo Bookings (reservas con SELECT FOR UPDATE)
-- Módulo Payments (MercadoPago webhook)
-- Módulo Notifications (Resend + cron)
-- Módulo Reviews (calificaciones)
-- Deploy en Render
+Entidad User con UUID, roles enum (user/partner/admin), soft delete y bloqueo por intentos fallidos
+POST /api/v1/auth/register — registro con hash bcrypt (factor 12) y validación de email único
+POST /api/v1/auth/login — login con verificación de contraseña y bloqueo tras 5 intentos fallidos (15 min)
+Generación de JWT con payload { sub, email, role }
+JwtStrategy con Passport para validación del token en cada request
+JwtAuthGuard para proteger rutas que requieren autenticación
+RolesGuard para control de acceso por rol
+@Roles y @CurrentUser decoradores
+GET /api/v1/auth/profile — endpoint protegido de prueba
+passwordHash nunca expuesto en las respuestas
+
+✅ Fase 3 — Módulo Partners
+
+Entidad Partner con UUID, userId FK, status enum (draft/active/suspended), cancelWindowHours
+POST /api/v1/partners — crear negocio (cambia rol del usuario a partner, estado inicial draft)
+GET /api/v1/partners/me — ver mi propio negocio
+GET /api/v1/partners/:id — ver negocio por ID
+PATCH /api/v1/partners/:id — actualizar datos del negocio
+PATCH /api/v1/partners/:id/location — geocodificar dirección con Google Maps
+PATCH /api/v1/partners/:id/activate — activar negocio (draft → active)
+GeocodingService integrado con Google Maps Geocoding API
+Mock de geocodificación cuando no hay API key (retorna coordenadas de Buenos Aires)
+Partners en estado draft no aparecen en búsquedas (RN-05)
+
+✅ Fase 4 — Módulo Services
+
+Entidad Service con UUID, partnerId FK, duration, price, isActive
+POST /api/v1/services — crear servicio (solo partners)
+GET /api/v1/services — listar todos los servicios activos
+GET /api/v1/services/partner/:partnerId — servicios por partner
+GET /api/v1/services/:id — ver servicio por ID
+PATCH /api/v1/services/:id — actualizar servicio con ownership check
+PATCH /api/v1/services/:id/deactivate — desactivar servicio
+DELETE /api/v1/services/:id — eliminar servicio con ownership check (RN-07)
+Validación precio mayor a 0 (RN-06)
+
+✅ Fase 5 — Módulo Slots
+
+Entidad Slot con UUID, serviceId FK, partnerId FK, datetime, status enum (free/reserved/blocked)
+POST /api/v1/slots — crear slots en bulk (solo partners)
+GET /api/v1/slots/available?serviceId=&date= — slots disponibles por servicio y fecha
+GET /api/v1/slots/partner/:partnerId?date= — agenda del partner por fecha
+POST /api/v1/slots/block-day — bloquear todos los slots libres de un día
+
+✅ Fase 6 — Módulo Bookings
+
+Entidad Booking con UUID, userId FK, slotId FK (UNIQUE), serviceId FK, status enum, reminderSent
+POST /api/v1/bookings — crear reserva con transacción ACID y SELECT FOR UPDATE (RN-01)
+GET /api/v1/bookings/my — historial de reservas del usuario
+GET /api/v1/bookings/partner — reservas del negocio
+GET /api/v1/bookings/:id — ver reserva por ID
+PATCH /api/v1/bookings/:id/cancel — cancelar con validación de ventana horaria (RN-03, RN-04)
+PATCH /api/v1/bookings/:id/complete — partner marca turno como completado
+Campo reminderSent para idempotencia del cron de recordatorios (RN-08)
+
+## ⏳ En progreso
+
+Módulo Payments (MercadoPago sandbox + webhook)
+
+## 📋 Pendiente
+
+Módulo Notifications (Resend + cron de recordatorios)
+Módulo Reviews (calificaciones post-servicio)
+Módulo Dashboard (métricas con Promise.all)
+Tests unitarios e integración (Jest + Supertest)
+Deploy en Render + Railway/Supabase
 
 ---
 
