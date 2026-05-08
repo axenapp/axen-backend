@@ -9,6 +9,7 @@ import { SlotsModule } from './modules/slots/slots.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     BookingsModule,
     PaymentsModule,
     NotificationsModule,
+    ReviewsModule,
   ],
 })
 export class AppModule {}
