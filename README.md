@@ -158,18 +158,30 @@ PATCH /api/v1/bookings/:id/cancel — cancelar con validación de ventana horari
 PATCH /api/v1/bookings/:id/complete — partner marca turno como completado
 Campo reminderSent para idempotencia del cron de recordatorios (RN-08)
 
-## ⏳ En progreso
+### ✅ Fase 7 — Módulo Notifications
+- NotificationsService con stubs de email listos para Resend
+- @Cron cada hora: busca turnos confirmados en las próximas 24hs con reminderSent=false
+- Actualiza reminderSent=true tras enviar (RN-08 idempotencia)
+- ScheduleModule registrado globalmente
 
-Módulo Payments (MercadoPago sandbox + webhook)
+### ✅ Fase 8 — Módulo Reviews
+- Entidad Review con UNIQUE en bookingId (una reseña por turno, RN-02)
+- POST /api/v1/reviews — crear reseña (solo para turnos completados)
+- GET /api/v1/reviews/partner/:partnerId — reseñas del partner
+- GET /api/v1/reviews/partner/:partnerId/average — promedio de calificación
+- GET /api/v1/reviews/my — reseñas del usuario
+- Ownership check y validación de estado completado (RN-02)
 
-## 📋 Pendiente
+### ✅ Fase 9 — Dashboard del partner
+- GET /api/v1/partners/dashboard — métricas del negocio (solo partners)
+- Promise.all para queries paralelas: turnos de hoy, turnos del mes + ingresos, promedio de calificación, últimas reservas
 
-Módulo Notifications (Resend + cron de recordatorios)
-Módulo Reviews (calificaciones post-servicio)
-Módulo Dashboard (métricas con Promise.all)
-Tests unitarios e integración (Jest + Supertest)
-Deploy en Render + Railway/Supabase
-
+### ⏳ Pendiente
+- Integración real de Resend (requiere API key)
+- Integración real de MercadoPago (requiere access token sandbox)
+- Integración real de Google Maps (requiere API key)
+- Tests unitarios e integración (Jest + Supertest)
+- Deploy en Render + Railway/Supabase
 ---
 
 ## Documentación técnica
@@ -184,5 +196,5 @@ Incluye diagramas UML, esquema de base de datos, flujos de interacción, decisio
 ## Equipo
 
 - **Franco Chiquilito** — Backend + App móvil
-- **Flor Gomez Pacheco** — Panel web
+- **Flor Gomez Pacheco** — Backend + Panel web
 
