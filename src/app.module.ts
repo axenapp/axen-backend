@@ -1,17 +1,22 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './modules/auth/auth.module';
 import { PartnersModule } from './modules/partners/partners.module';
 import { ServicesModule } from './modules/services/services.module';
 import { SlotsModule } from './modules/slots/slots.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
+    ScheduleModule.forRoot(),
 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -35,6 +40,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     SlotsModule,
     BookingsModule,
     PaymentsModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
