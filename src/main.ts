@@ -23,8 +23,8 @@ async function bootstrap() {
 
   // CORS para el panel web y la app móvil
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true,
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3001'],
+  credentials: true,
   });
 
   const port = process.env.PORT || 3000;

@@ -1,9 +1,9 @@
 import { IsUUID } from 'class-validator';
 
 export class CreateBookingDto {
-  @IsUUID()
+  @IsUUID('all')
   slotId: string;
 
-  @IsUUID()
+  @IsUUID('all')
   serviceId: string;
 }
