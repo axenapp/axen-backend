@@ -30,6 +30,12 @@ export class PartnersController {
     return this.partnersService.create(user.id, createPartnerDto);
   }
 
+  // Listar todos los negocios activos (cualquier usuario autenticado)
+  @Get()
+  async findAll() {
+    return this.partnersService.findAllActive();
+  }
+
   // Ver mi propio negocio
   @Get('me')
   @Roles(UserRole.PARTNER)

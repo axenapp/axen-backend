@@ -1,27 +1,25 @@
 # Axen Backend
 
-API REST del sistema Axen — Plataforma integral de reservas de servicios locales.
+API REST de la plataforma Axen. Gestiona autenticación, negocios, servicios, slots, reservas, pagos y notificaciones.
 
 ## Stack
 
-- **Framework:** NestJS + TypeScript
-- **Base de datos:** PostgreSQL 15 + TypeORM
-- **Autenticación:** JWT + Passport.js
-- **Pagos:** MercadoPago (sandbox)
-- **Emails:** Resend
-- **Geolocalización:** Google Maps Geocoding API
-- **Contenedor BD:** Docker
-
----
+| | |
+|---|---|
+| **Framework** | NestJS 11 + TypeScript |
+| **Base de datos** | PostgreSQL 15 (Docker) |
+| **ORM** | TypeORM 0.3 |
+| **Autenticación** | JWT + Passport + bcrypt (factor 12) |
+| **Pagos** | MercadoPago SDK v2 (sandbox) |
+| **Emails** | Nodemailer / Resend *(ver nota de entorno)* |
+| **Tareas programadas** | @nestjs/schedule + @Cron |
+| **Validación** | class-validator + class-transformer |
 
 ## Requisitos
 
 - Node.js v18 o superior
 - npm v9 o superior
-- Docker Desktop
-- Git
-
----
+- Docker Desktop corriendo
 
 ## Instalación
 
@@ -33,168 +31,174 @@ cd axen-backend
 # 2. Instalar dependencias
 npm install
 
-# 3. Crear el archivo de variables de entorno
-cp .env.example .env
-# Completar los valores en .env
+# 3. Configurar variables de entorno
+# Crear el archivo .env con los valores de la sección siguiente
 
 # 4. Levantar PostgreSQL con Docker
-docker-compose up -d
+docker compose up -d
 
-# 5. Levantar el servidor en modo desarrollo
+# 5. Cargar datos de prueba
+npm run seed
+
+# 6. Levantar el servidor de desarrollo
 npm run start:dev
 ```
 
-El servidor corre en `http://localhost:3000/api/v1`
-
----
+La API corre en `http://localhost:3000/api/v1`
 
 ## Variables de entorno
 
-Ver `.env.example` para la lista completa de variables requeridas.
+Crear un archivo `.env` en la raíz del proyecto:
 
----
+```env
+# Base de datos
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=postgres
+DATABASE_PASSWORD=postgres
+DATABASE_NAME=axen_db
+
+# JWT
+JWT_SECRET=cambiar_por_secreto_seguro
+
+# Entorno
+NODE_ENV=development
+
+# URLs
+BACKEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:5174
+
+# MercadoPago (sandbox — obtener en mercadopago.com.ar/developers)
+MP_ACCESS_TOKEN=TEST-xxxxxxxxxxxxxxxxxxxx
+MP_WEBHOOK_SECRET=
+```
+
+> `MP_WEBHOOK_SECRET` se puede dejar vacío en local — la verificación de firma se saltea automáticamente.
+
+## Seed de datos de prueba
+
+El comando `npm run seed` carga en la base de datos:
+
+- Usuario partner: `partner@axen.demo` / `Demo1234`
+- Negocio: *Peluquería Axen Demo* (activo)
+- 2 servicios: Corte de cabello ($3.500) y Corte + Barba ($5.000)
+- 112 slots para los próximos 7 días (9:00 a 17:00)
+
+Puede correrse múltiples veces — limpia los datos previos antes de insertar.
 
 ## Estructura del proyecto
+
+```
 src/
 ├── modules/
-│   ├── auth/           # Autenticación y registro
-│   ├── users/          # Entidad y gestión de usuarios
-│   ├── partners/       # Negocios y onboarding
-│   ├── services/       # Catálogo de servicios
-│   ├── slots/          # Disponibilidad horaria
-│   ├── bookings/       # Reservas de turnos
-│   ├── payments/       # Pagos con MercadoPago
-│   ├── notifications/  # Emails y recordatorios
-│   └── reviews/        # Calificaciones
+│   ├── auth/          # Register, login, JWT strategy
+│   ├── users/         # Entidad usuario
+│   ├── partners/      # Negocios, geocoding, dashboard
+│   ├── services/      # Servicios del negocio
+│   ├── slots/         # Disponibilidad y agenda
+│   ├── bookings/      # Reservas con SELECT FOR UPDATE
+│   ├── payments/      # MercadoPago + webhook
+│   ├── notifications/ # Emails + cron de recordatorios
+│   └── reviews/       # Reseñas de usuarios
 ├── common/
-│   ├── guards/         # JwtAuthGuard, RolesGuard
-│   ├── decorators/     # @Roles, @CurrentUser
-│   ├── filters/        # ExceptionFilter global
-│   └── pipes/          # Pipes de validación
-├── config/             # Configuración centralizada
+│   ├── decorators/    # @CurrentUser, @Roles
+│   ├── guards/        # JwtAuthGuard, RolesGuard
+│   └── filters/       # HttpExceptionFilter global
 ├── app.module.ts
-└── main.ts
-
----
-
-## Endpoints disponibles
-
-### Autenticación
-
-| Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/v1/auth/register` | Registro de usuario | No |
-| POST | `/api/v1/auth/login` | Login y obtención de JWT | No |
-
----
+├── main.ts
+└── seed.ts
+```
 
 ## Progreso del desarrollo
 
-✅ Fase 1 — Configuración inicial
+### ✅ Completado
 
-Proyecto NestJS inicializado con TypeScript
-PostgreSQL 15 en contenedor Docker (docker-compose up -d)
-TypeORM conectado con sincronización automática en desarrollo
-ValidationPipe global (whitelist, transform, forbidNonWhitelisted)
-ExceptionFilter global con formato estándar de errores y traceId UUID
-CORS configurado para el panel web
-Prefijo global /api/v1
-Estructura de módulos creada
+**Configuración base**
+- NestJS con prefijo global `/api/v1`
+- ValidationPipe global (whitelist, transform, forbidNonWhitelisted)
+- TypeORM con `synchronize: true` en desarrollo y `false` en producción
+- CORS configurado para panel web y app móvil
+- Filtro global de excepciones con respuestas estandarizadas
+- Script de seed con datos de demo
 
-✅ Fase 2 — Autenticación
+**Módulo Auth**
+- `POST /auth/register` y `POST /auth/login`
+- JWT firmado, bcrypt factor 12
+- Bloqueo de cuenta tras 5 intentos fallidos (15 minutos)
+- Guards de autenticación y roles (`user` / `partner`)
 
-Entidad User con UUID, roles enum (user/partner/admin), soft delete y bloqueo por intentos fallidos
-POST /api/v1/auth/register — registro con hash bcrypt (factor 12) y validación de email único
-POST /api/v1/auth/login — login con verificación de contraseña y bloqueo tras 5 intentos fallidos (15 min)
-Generación de JWT con payload { sub, email, role }
-JwtStrategy con Passport para validación del token en cada request
-JwtAuthGuard para proteger rutas que requieren autenticación
-RolesGuard para control de acceso por rol
-@Roles y @CurrentUser decoradores
-GET /api/v1/auth/profile — endpoint protegido de prueba
-passwordHash nunca expuesto en las respuestas
+**Módulo Partners**
+- CRUD completo de negocios
+- Geocodificación de dirección (mock sin API key → coordenadas de Buenos Aires)
+- Flujo `draft → active` vía endpoint `/activate`
+- Endpoint `/dashboard` con métricas en paralelo (Promise.all)
+- Endpoint `/me` para el partner autenticado
+- `GET /partners` para listar negocios activos
 
-✅ Fase 3 — Módulo Partners
+**Módulo Services**
+- CRUD de servicios por partner con ownership check
+- Filtrado por partner y estado activo
+- Desactivar servicio sin eliminarlo
 
-Entidad Partner con UUID, userId FK, status enum (draft/active/suspended), cancelWindowHours
-POST /api/v1/partners — crear negocio (cambia rol del usuario a partner, estado inicial draft)
-GET /api/v1/partners/me — ver mi propio negocio
-GET /api/v1/partners/:id — ver negocio por ID
-PATCH /api/v1/partners/:id — actualizar datos del negocio
-PATCH /api/v1/partners/:id/location — geocodificar dirección con Google Maps
-PATCH /api/v1/partners/:id/activate — activar negocio (draft → active)
-GeocodingService integrado con Google Maps Geocoding API
-Mock de geocodificación cuando no hay API key (retorna coordenadas de Buenos Aires)
-Partners en estado draft no aparecen en búsquedas (RN-05)
+**Módulo Slots**
+- Creación masiva de slots
+- Bloqueo de día completo
+- Disponibilidad por servicio y fecha — `GET /slots/available`
+- Agenda del partner por fecha — `GET /slots/partner/:id`
 
-✅ Fase 4 — Módulo Services
+**Módulo Bookings**
+- Creación con `SELECT FOR UPDATE` (previene doble reserva)
+- Ventana de cancelación configurable por negocio (`cancelWindowHours`)
+- Marcado como completado por el partner
+- Historial por usuario (`/bookings/my`) y por partner (`/bookings/partner`)
 
-Entidad Service con UUID, partnerId FK, duration, price, isActive
-POST /api/v1/services — crear servicio (solo partners)
-GET /api/v1/services — listar todos los servicios activos
-GET /api/v1/services/partner/:partnerId — servicios por partner
-GET /api/v1/services/:id — ver servicio por ID
-PATCH /api/v1/services/:id — actualizar servicio con ownership check
-PATCH /api/v1/services/:id/deactivate — desactivar servicio
-DELETE /api/v1/services/:id — eliminar servicio con ownership check (RN-07)
-Validación precio mayor a 0 (RN-06)
+**Módulo Payments**
+- Creación de preferencia MercadoPago sandbox
+- Webhook `POST /payments/webhook` con verificación de firma `X-Signature`
+- Transición automática de estados al recibir webhook (approved/rejected/cancelled)
+- Liberación del slot si el pago falla
 
-✅ Fase 5 — Módulo Slots
+**Módulo Notifications**
+- Cron `@EVERY_HOUR`: detecta turnos en las próximas 24hs y marca `reminder_sent`
+- Garantía de idempotencia — no envía el mismo recordatorio dos veces
+- Estructura lista para conectar Resend
 
-Entidad Slot con UUID, serviceId FK, partnerId FK, datetime, status enum (free/reserved/blocked)
-POST /api/v1/slots — crear slots en bulk (solo partners)
-GET /api/v1/slots/available?serviceId=&date= — slots disponibles por servicio y fecha
-GET /api/v1/slots/partner/:partnerId?date= — agenda del partner por fecha
-POST /api/v1/slots/block-day — bloquear todos los slots libres de un día
+**Módulo Reviews**
+- `POST /reviews` — una reseña por turno completado (constraint UNIQUE en bookingId)
+- `GET /reviews/partner/:id` — reseñas de un negocio
+- Ownership check y validación de estado
 
-✅ Fase 6 — Módulo Bookings
+### ⚠️ Notas del entorno de pruebas
 
-Entidad Booking con UUID, userId FK, slotId FK (UNIQUE), serviceId FK, status enum, reminderSent
-POST /api/v1/bookings — crear reserva con transacción ACID y SELECT FOR UPDATE (RN-01)
-GET /api/v1/bookings/my — historial de reservas del usuario
-GET /api/v1/bookings/partner — reservas del negocio
-GET /api/v1/bookings/:id — ver reserva por ID
-PATCH /api/v1/bookings/:id/cancel — cancelar con validación de ventana horaria (RN-03, RN-04)
-PATCH /api/v1/bookings/:id/complete — partner marca turno como completado
-Campo reminderSent para idempotencia del cron de recordatorios (RN-08)
+**Emails**
+Los emails están estructurados pero no se envían realmente. Cada evento (confirmación, cancelación, recordatorio, bienvenida) solo loguea en consola. Para activar el envío real hay que agregar la API key de Resend al `.env`.
 
-### ✅ Fase 7 — Módulo Notifications
-- NotificationsService con stubs de email listos para Resend
-- @Cron cada hora: busca turnos confirmados en las próximas 24hs con reminderSent=false
-- Actualiza reminderSent=true tras enviar (RN-08 idempotencia)
-- ScheduleModule registrado globalmente
+**Webhook de pagos en local**
+MercadoPago no puede llamar a `localhost`. Para probar el flujo completo de pago en local se necesita [ngrok](https://ngrok.com):
+```bash
+ngrok http 3000
+# Copiar la URL https://xxxx.ngrok-free.app
+# Actualizar BACKEND_URL en .env y reiniciar el backend
+```
+En producción con URL pública esto funciona automáticamente.
 
-### ✅ Fase 8 — Módulo Reviews
-- Entidad Review con UNIQUE en bookingId (una reseña por turno, RN-02)
-- POST /api/v1/reviews — crear reseña (solo para turnos completados)
-- GET /api/v1/reviews/partner/:partnerId — reseñas del partner
-- GET /api/v1/reviews/partner/:partnerId/average — promedio de calificación
-- GET /api/v1/reviews/my — reseñas del usuario
-- Ownership check y validación de estado completado (RN-02)
+### 📋 Pendiente
 
-### ✅ Fase 9 — Dashboard del partner
-- GET /api/v1/partners/dashboard — métricas del negocio (solo partners)
-- Promise.all para queries paralelas: turnos de hoy, turnos del mes + ingresos, promedio de calificación, últimas reservas
+- Módulo de favoritos
+- Paginación en endpoints de búsqueda
+- Migraciones TypeORM (reemplazar `synchronize`)
+- Índices de base de datos
+- Tests unitarios e integración
+- Deploy a Render / Railway
 
-### ⏳ Pendiente
-- Integración real de Resend (requiere API key)
-- Integración real de MercadoPago (requiere access token sandbox)
-- Integración real de Google Maps (requiere API key)
-- Tests unitarios e integración (Jest + Supertest)
-- Deploy en Render + Railway/Supabase
----
+## Credenciales de prueba
 
-## Documentación técnica
-
-La arquitectura completa del sistema está documentada en el repositorio de la organización:
-[axenapp/docs](https://github.com/axenapp)
-
-Incluye diagramas UML, esquema de base de datos, flujos de interacción, decisiones arquitectónicas y requisitos funcionales y no funcionales.
-
----
+| Rol | Email | Contraseña |
+|-----|-------|------------|
+| Partner (seed) | `partner@axen.demo` | `Demo1234` |
+| Usuario | Registrarse desde la app | mín. 8 caracteres, 1 mayúscula, 1 número |
 
 ## Equipo
 
-- **Franco Chiquilito** — Backend + App móvil
-- **Flor Gomez Pacheco** — Backend + Panel web
-
+**Flor Gomez Pacheco** — Backend · Panel web  
+**Franco Chiquilito** — Backend · App móvil
