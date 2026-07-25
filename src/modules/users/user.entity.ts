@@ -37,6 +37,9 @@ export class User {
   })
   role: UserRole;
 
+  @Column({ nullable: true, length: 300 })
+  address: string;
+ 
   @Column({ name: 'failed_attempts', default: 0 })
   failedAttempts: number;
 

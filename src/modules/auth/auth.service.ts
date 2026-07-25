@@ -91,6 +91,15 @@ export class AuthService {
     const token = this.generateToken(user);
     return { token, user: this.sanitizeUser(user) };
   }
+  async updateProfile(userId: string, dto: { name?: string; phone?: string; address?: string }) {
+  const user = await this.userRepository.findOne({ where: { id: userId } });
+  if (!user) throw new UnauthorizedException('Usuario no encontrado');
+  if (dto.name) user.name = dto.name;
+  if (dto.phone !== undefined) user.phone = dto.phone;
+  if (dto.address !== undefined) user.address = dto.address;
+  await this.userRepository.save(user);
+  return this.sanitizeUser(user);
+  }
 
   private generateToken(user: User) {
     const payload = {
