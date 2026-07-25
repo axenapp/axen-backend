@@ -17,12 +17,12 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User, UserRole } from '../users/user.entity';
 
 @Controller('partners')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class PartnersController {
   constructor(private readonly partnersService: PartnersService) {}
 
-  // Registrar un nuevo negocio (cualquier usuario autenticado)
+  // Registrar un nuevo negocio (autenticado)
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async create(
     @CurrentUser() user: User,
     @Body() createPartnerDto: CreatePartnerDto,
@@ -30,34 +30,37 @@ export class PartnersController {
     return this.partnersService.create(user.id, createPartnerDto);
   }
 
-  // Listar todos los negocios activos (cualquier usuario autenticado)
+  // Listar todos los negocios activos (PÚBLICO)
   @Get()
   async findAll() {
     return this.partnersService.findAllActive();
   }
 
-  // Ver mi propio negocio
+  // Ver mi propio negocio (solo partner)
   @Get('me')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.PARTNER)
   async findMe(@CurrentUser() user: User) {
     return this.partnersService.findByUserId(user.id);
   }
 
-  // Dashboard del partner
+  // Dashboard del partner (solo partner)
   @Get('dashboard')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.PARTNER)
   async getDashboard(@CurrentUser() user: User) {
     return this.partnersService.getDashboard(user.id);
   }
 
-  // Ver un negocio por ID (público para usuarios autenticados)
+  // Ver un negocio por ID (PÚBLICO)
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.partnersService.findOne(id);
   }
 
-  // Actualizar mi negocio
+  // Actualizar mi negocio (solo partner)
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.PARTNER)
   async update(
     @Param('id') id: string,
@@ -65,17 +68,21 @@ export class PartnersController {
   ) {
     return this.partnersService.update(id, updatePartnerDto);
   }
-    // Actualizar ubicación del negocio con geocodificación
-    @Patch(':id/location')
-    @Roles(UserRole.PARTNER)
-    async updateLocation(
+
+  // Actualizar ubicación (solo partner)
+  @Patch(':id/location')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.PARTNER)
+  async updateLocation(
     @Param('id') id: string,
     @Body('address') address: string,
-    ) {
+  ) {
     return this.partnersService.updateLocation(id, address);
-    }
-  // Activar el negocio (completar onboarding)
+  }
+
+  // Activar el negocio (solo partner)
   @Patch(':id/activate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.PARTNER)
   async activate(@Param('id') id: string) {
     return this.partnersService.activate(id);
